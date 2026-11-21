@@ -1,0 +1,176 @@
+/* Larger type and calmer spacing for long review sessions. */
+body {
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.topbar {
+  min-height: 68px;
+  height: auto;
+  padding-block: 10px;
+}
+
+.brand { font-size: 22px; }
+.workspace-name { font-size: 14px; }
+.quiet-button { font-size: 14px; min-height: 44px; }
+.quiet-button svg { width: 18px; height: 18px; }
+.avatar { width: 36px; height: 36px; font-size: 12px; }
+
+.intro {
+  gap: 48px;
+  padding: 54px 0 38px;
+}
+
+.eyebrow { font-size: 12px; }
+h1 {
+  font-size: clamp(52px, 4.3vw, 68px);
+  line-height: 1.02;
+  margin: 20px 0 16px;
+}
+.intro-deck { max-width: 43ch; font-size: 16px; line-height: 1.65; }
+.upload-note { max-width: 48ch; font-size: 13px; line-height: 1.55; margin-top: 12px; }
+
+.doc-meta { width: 350px; gap: 14px; padding-top: 18px; }
+.file-icon { width: 42px; height: 46px; }
+.doc-title { font-size: 16px; }
+.doc-sub { font-size: 13px; line-height: 1.45; }
+.import-button { min-height: 44px; padding: 10px 14px; font-size: 13px; }
+
+.review-bar {
+  min-height: 82px;
+  height: auto;
+  padding: 15px 24px;
+  gap: 32px;
+}
+.review-status { min-width: 250px; gap: 14px; }
+.status-ring { width: 28px; height: 28px; }
+.status-ring span { width: 14px; height: 14px; }
+.review-status strong { font-size: 15px; }
+.review-status small { font-size: 13px; line-height: 1.4; }
+.review-meter { width: 210px; }
+.meter-label { font-size: 12px; }
+.meter-label strong { font-size: 13px; }
+.meter-track { height: 5px; }
+.finish-button { min-height: 46px; padding: 12px 18px; font-size: 13px; }
+
+.workbench {
+  grid-template-columns: 220px minmax(460px, 1fr) minmax(370px, 440px);
+  margin-top: 30px;
+  min-height: 720px;
+}
+.lens-rail { padding-top: 23px; }
+.rail-heading { font-size: 11px; margin-bottom: 17px; }
+.lens { min-height: 46px; padding-inline: 11px; font-size: 14px; gap: 11px; }
+.lens b { font-size: 12px; }
+.lens-glyph { width: 19px; font-size: 18px; }
+.rail-note { padding-top: 22px; }
+.rail-note p { max-width: 175px; font-size: 17px; }
+.lens-help { font-size: 12px; padding: 10px 5px; }
+
+.document-pane { padding-inline: 30px; }
+.pane-toolbar, .findings-head { min-height: 56px; height: auto; }
+.page-control { gap: 12px; }
+.page-control button, .paper-controls button { min-width: 40px; min-height: 40px; font-size: 20px; }
+.page-control span { font-size: 11px; }
+.page-control small { font-size: 11px; }
+.toolbar-right { gap: 18px; }
+.reading-mode { font-size: 12px; }
+.reading-mode i { width: 8px; height: 8px; }
+.tool-icon { min-width: 40px; min-height: 40px; font-size: 15px; }
+.tool-icon sup { font-size: 10px; }
+
+.paper { max-width: 700px; padding: 44px 56px 30px; }
+.paper-kicker { font-size: 11px; margin-bottom: 16px; }
+.paper h2 { font-size: 40px; line-height: 1.08; margin-bottom: 17px; }
+.paper p { font-size: 16px; line-height: 1.78; margin: 16px 0; }
+.paper p.paper-lead { max-width: 48ch; font-size: 19px; line-height: 1.6; margin-bottom: 22px; }
+.paper blockquote { font-size: 18px; line-height: 1.55; margin: 22px 0; padding-left: 18px; }
+.paper cite { font-size: 11px; }
+.paper-footer { font-size: 10px; }
+.paper-controls { max-width: 700px; min-height: 50px; height: auto; font-size: 11px; }
+.paper-controls button { font-size: 13px; }
+.uploaded-text, .uploaded-text p { font-size: 17px; line-height: 1.8; }
+
+.findings-pane { padding-left: 25px; }
+.findings-head h2 { font-size: 23px; }
+.section-kicker { font-size: 10px; }
+.filter-button { min-height: 42px; padding: 9px 12px; font-size: 13px; }
+.filter-button svg { width: 16px; height: 16px; }
+.findings-summary { min-height: 46px; height: auto; font-size: 12px; gap: 9px; }
+.findings-summary b { font-size: 12px; }
+.findings-summary button { min-height: 40px; font-size: 12px; }
+.findings-list { max-height: 610px; gap: 12px; padding-right: 5px; }
+.finding { padding: 17px 17px 15px; }
+.finding-top { gap: 9px; margin-bottom: 10px; }
+.category-dot { width: 9px; height: 9px; }
+.category-name { font-size: 11px; }
+.severity { font-size: 10px; }
+.finding h3, .finding-title { font-size: 15px; line-height: 1.45; }
+.finding p { font-size: 13px; line-height: 1.6; }
+.finding-source { margin-top: 12px; padding-top: 10px; font-size: 11px; }
+.passage-button { font-size: 11px; }
+.finding-actions { gap: 8px; margin-top: 11px; }
+.finding-actions button { min-height: 38px; padding: 8px 11px; font-size: 12px; }
+.add-note { padding-top: 13px; }
+.add-note button { min-height: 42px; font-size: 13px; }
+.add-note button span { font-size: 18px; }
+
+.evidence-trail { padding: 16px; margin-top: 10px; }
+.trail-head { gap: 11px; padding-bottom: 12px; }
+.trail-mark { width: 30px; height: 30px; font-size: 19px; }
+.trail-head small, .trail-step > small, .trail-source small { font-size: 10px; }
+.trail-head h3 { font-size: 17px; }
+.trail-step { padding: 12px 0 10px; }
+.trail-step blockquote { font-size: 15px; line-height: 1.5; }
+.reviewer-read p, .trail-source p { font-size: 12px; line-height: 1.55; }
+.trail-source button { min-height: 40px; padding: 8px 10px; font-size: 11px; }
+.review-question { font-size: 12px; line-height: 1.5; }
+.review-question b { font-size: 10px; }
+.toast { padding: 13px 19px; font-size: 13px; }
+
+@media (max-width: 1100px) {
+  .workbench { grid-template-columns: 170px minmax(0, 1fr) minmax(320px, 0.9fr); }
+  .document-pane { padding-inline: 20px; }
+  .paper { padding: 36px 40px 28px; }
+  .findings-pane { padding-left: 18px; }
+}
+
+@media (max-width: 850px) {
+  .workbench { grid-template-columns: 1fr 1fr; }
+  .lens-rail { padding: 0 0 12px; }
+  .intro { padding-top: 40px; }
+  .doc-meta { width: min(350px, 45%); }
+}
+
+@media (max-width: 620px) {
+  .topbar { min-height: 60px; padding: 8px 18px; }
+  .brand { font-size: 20px; }
+  .workspace-name { margin-left: 16px; }
+  .avatar { width: 34px; height: 34px; }
+  main { padding-inline: 17px; }
+  .intro { display: block; padding: 34px 0 24px; }
+  h1 { font-size: clamp(43px, 12vw, 52px); }
+  .intro-deck { font-size: 15px; }
+  .upload-note { max-width: 100%; font-size: 12px; }
+  .doc-meta { width: 100%; margin-top: 23px; }
+  .review-bar { padding: 13px; gap: 12px; }
+  .review-status { min-width: 0; }
+  .review-status strong { font-size: 14px; }
+  .review-status small { font-size: 12px; }
+  .review-meter { width: 100%; order: 3; }
+  .finish-button { min-height: 44px; padding: 10px 12px; }
+  .workbench { display: flex; flex-direction: column; margin-top: 20px; }
+  .lens-rail { overflow-x: auto; flex-shrink: 0; justify-content: flex-start; margin-bottom: 15px; }
+  .lens { min-height: 42px; padding-inline: 10px; font-size: 13px; white-space: nowrap; }
+  .document-pane { padding: 0; }
+  .findings-pane { border-left: 0; border-top: 1px solid #d9ded7; padding: 0; margin-top: 20px; }
+  .paper { padding: 30px 25px 24px; min-height: 0; }
+  .paper h2 { font-size: 32px; }
+  .paper p, .uploaded-text, .uploaded-text p { font-size: 16px; }
+  .paper p.paper-lead { font-size: 18px; }
+  .findings-list { max-height: none; }
+  .finding { padding: 15px; }
+  .finding h3, .finding-title { font-size: 15px; }
+  .finding p { font-size: 13px; }
+  .bottomline { font-size: 11px; }
+}
