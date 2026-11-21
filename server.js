@@ -32,7 +32,7 @@ const api = AI_PROVIDER === "openai" && process.env.OPENAI_API_KEY
 if (!new Set(["ollama", "gemini", "openai"]).has(AI_PROVIDER)) {
   throw new Error("AI_PROVIDER must be ollama, gemini, or openai.");
 }
-if (PRODUCTION && APP_PASSWORD.length < 12) {
+if (PRODUCTION && APP_PASSWORD && APP_PASSWORD.length < 12) {
   throw new Error("Set APP_PASSWORD to a unique value of at least 12 characters before deploying.");
 }
 let apiIssue = null;
@@ -233,7 +233,7 @@ function schemaWithoutStrictFlags(schema) {
 }
 
 function requireAppPassword(req, res, next) {
-  if (!PRODUCTION) return next();
+  if (!PRODUCTION || !APP_PASSWORD) return next();
   const authorization = req.headers.authorization || "";
   const encoded = authorization.match(/^Basic\s+(.+)$/i)?.[1];
   let password = "";
