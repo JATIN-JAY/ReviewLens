@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#101b1d" />
+  <meta name="description" content="A calm, evidence-first workspace for reviewing AI-written documents." />
+  <title>Lucent — AI Review Lens</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Lucent home"><span class="brand-mark"><i></i><i></i><i></i></span><span>lucent</span></a>
+      <div class="workspace-name"><span class="workspace-dot"></span> Research desk <span class="crumb">/</span> <span class="muted">Review room</span></div>
+      <div class="top-actions"><button class="quiet-button" id="shareBtn" title="Copy review link"><svg viewBox="0 0 24 24"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 13v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/></svg><span>Share</span></button><button class="avatar" aria-label="Profile">JD</button></div>
+    </header>
+
+    <main>
+      <section class="intro">
+        <div class="intro-copy"><div class="eyebrow"><span class="eyebrow-line"></span> DOCUMENT REVIEW <span class="eyebrow-sep">/</span> LUCENT</div><h1>Look closer.<br /><em>Read with intent.</em></h1><p class="intro-deck" id="introDeck">A second set of eyes for the things that sound right<br class="desktop-break" /> before you know they are.</p><p class="upload-note">PDF, DOCX, TXT or Markdown · <span id="uploadDisclosure">Checking AI provider…</span></p></div>
+        <div class="doc-meta"><div class="file-icon"><svg viewBox="0 0 24 24"><path d="M6 3.75h8l4 4v12.5H6zM14 4v4h4M9 12h6M9 15.5h6"/></svg></div><div class="document-label"><div class="doc-title" id="documentName">A synthetic future of care</div><div class="doc-sub" id="documentMeta">Sample review <span>·</span> example document</div></div><button class="import-button" id="chooseDocument">Choose a document</button><input id="fileInput" type="file" accept=".pdf,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown" hidden /></div>
+      </section>
+
+      <section class="review-bar" aria-label="Review overview"><div class="review-status"><span class="status-ring"><span></span></span><div><strong id="reviewStatus">Sample review</strong><small id="reviewProgress">Choose a document to start an AI review</small></div></div><div class="review-meter"><div class="meter-label"><span>Coverage</span><strong id="coverageLabel">—</strong></div><div class="meter-track"><span id="coverageFill" style="width:0%"></span></div></div><button class="finish-button" id="finishBtn">Finish review <span>↗</span></button></section>
+
+      <section class="workbench">
+        <aside class="lens-rail" aria-label="Review lenses"><div class="rail-heading">YOUR LENSES</div><button class="lens active" data-filter="all"><span class="lens-glyph all-glyph">◉</span><span>All observations</span><b>7</b></button><button class="lens" data-filter="evidence"><span class="lens-glyph evidence-glyph">⌕</span><span>Evidence</span><b>3</b></button><button class="lens" data-filter="omissions"><span class="lens-glyph omission-glyph">◌</span><span>Blind spots</span><b>2</b></button><button class="lens" data-filter="framing"><span class="lens-glyph framing-glyph">⌁</span><span>Framing</span><b>2</b></button><div class="rail-note"><span class="note-star">✳</span><p>Good review is a practice of attention, not a search for mistakes.</p></div><button class="lens-help" id="lensHelp"><span>ⓘ</span> How lenses work</button></aside>
+
+        <article class="document-pane"><div class="pane-toolbar"><div class="page-control"><button aria-label="Previous page" id="prevPage">‹</button><span>PAGE <strong id="pageNum">03</strong> <small>/ 08</small></span><button aria-label="Next page" id="nextPage">›</button></div><div class="toolbar-right"><span class="reading-mode"><i></i> Reading view</span><button class="tool-icon" id="textSize" aria-label="Increase text size">A<sup>+</sup></button></div></div><div class="paper" id="paper"><div class="paper-kicker">SECTION 02 <span>·</span> THE CASE FOR AUTOMATION</div><h2>When confidence<br />outpaces the evidence</h2><p class="paper-lead">The promise of algorithmic care is often told as a story of inevitability. Yet the evidence behind that promise is more conditional than the story suggests.</p><div class="paper-rule"></div><p>Health systems are under pressure to do more with less. In response, a growing number of hospitals have begun piloting tools that promise to move routine decisions from the clinic to the computer. The most ambitious projections describe <mark class="hl framing" data-id="f1">a near-term transformation in how care is delivered</mark>, with efficiency gains that could reach every patient.</p><p><mark class="hl framing" data-id="f2">Early results appear encouraging.</mark> A 2023 evaluation <mark class="hl evidence" data-id="e3">across three hospital networks</mark> found that an automated triage assistant reduced average intake time by 18 percent. The report concludes <mark class="hl evidence" data-id="e1">these systems can return meaningful time to clinical teams</mark>, allowing staff to focus on complex cases.</p><p>But the pilots were conducted in well-resourced urban hospitals, supported by dedicated implementation teams. <mark class="hl omissions" data-id="o1">The same approach may look different in settings where data is less complete</mark> or where clinicians have fewer ways to challenge a recommendation. <mark class="hl omissions" data-id="o2">Few published evaluations follow outcomes beyond the first year.</mark></p><blockquote>“Performance in a controlled rollout tells us what a tool can do. It tells us less about what a health system can sustain.”<cite>— Center for Clinical Systems, 2024</cite></blockquote><p class="paper-tail">The distinction matters. A faster intake process is a useful outcome, but it is not by itself evidence of safer or more equitable care. <mark class="hl evidence" data-id="e2">The available evaluations have not yet shown whether time saved translates into better patient outcomes.</mark></p><div class="paper-footer"><span>FIELDNOTES / PUBLIC INTEREST TECHNOLOGY</span><span>03</span></div></div><div class="paper-controls"><button id="prevFinding">← Previous finding</button><span id="findingPosition">Finding 2 of 7</span><button id="nextFinding">Next finding →</button></div></article>
+
+        <aside class="findings-pane"><div class="findings-head"><div><div class="section-kicker">THE REVIEW</div><h2>What stands out</h2></div><button class="filter-button" id="filterBtn"><svg viewBox="0 0 24 24"><path d="M4 6h16M7 12h10"/></svg><span>Filter</span></button></div><div class="findings-summary"><span><b id="findingCount">7</b> observations</span><span class="summary-dot"></span><span>Across 8 pages</span><button id="sortBtn">Newest first⌄</button></div><div class="findings-list" id="findingsList"></div><section class="evidence-trail" id="evidenceTrail" aria-live="polite"></section><div class="add-note"><button id="addNote"><span>＋</span> Add your own note</button></div></aside>
+      </section>
+      <footer class="bottomline"><span>Lucent helps you ask better questions. The final call is yours.</span><span>PRIVATE REVIEW <i>●</i></span></footer>
+    </main>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
