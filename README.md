@@ -18,10 +18,10 @@ Deploy this folder as a Node.js 24 web service or build it with the included Doc
 - `AI_PROVIDER=gemini`
 - `GEMINI_API_KEY` from [Google AI Studio](https://aistudio.google.com/api-keys)
 - `GEMINI_MODEL=gemini-3-flash-preview`
-- `APP_PASSWORD` set to a unique password at least 12 characters long
+- Optional: set `APP_PASSWORD` to a unique password at least 12 characters long to require sign-in
 - `PORT` supplied by the host
 
-Production requires `APP_PASSWORD`; Lucent protects the site with browser basic authentication. The server binds to `0.0.0.0` in production. To use OpenAI instead, set `AI_PROVIDER=openai` and `OPENAI_API_KEY`.
+Lucent is public by default in production. To require sign-in, set APP_PASSWORD to a unique value of at least 12 characters; visitors will be prompted for it in their browser. The server binds to `0.0.0.0` in production. To use OpenAI instead, set `AI_PROVIDER=openai` and `OPENAI_API_KEY`.
 
 ## Documents
 
