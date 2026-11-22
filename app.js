@@ -1,87 +1,192 @@
-const sampleFindings = [
-  {id:"e1",type:"evidence",name:"Evidence",severity:"CHECK THIS",title:"A result from three hospitals becomes a broad promise",body:"The cited trial measured intake time in three urban networks. That does not establish system-wide efficiency or better care.",source:"Page 03",page:3,quote:"these systems can return meaningful time to clinical teams",question:"What evidence connects the time saved to a better outcome?"},
-  {id:"o1",type:"omissions",name:"Blind spot",severity:"CONTEXT",title:"The rollout conditions disappear from the conclusion",body:"Dedicated implementation teams and complete records shaped the pilots. Smaller clinics may face very different conditions.",source:"Page 03",page:3,quote:"The same approach may look different in settings where data is less complete",question:"How might the result change in a smaller clinic?"},
-  {id:"f1",type:"framing",name:"Framing",severity:"LANGUAGE",title:"“Near-term transformation” is stronger than the evidence",body:"The phrase creates a sense of inevitability. The examples that follow are small, early-stage pilots.",source:"Page 03",page:3,quote:"a near-term transformation in how care is delivered",question:"What evidence supports the word “transformation”?"},
-  {id:"e2",type:"evidence",name:"Evidence",severity:"OPEN QUESTION",title:"Time saved is not yet tied to patient outcomes",body:"The brief moves from a faster intake process to better care without a measured link between the two.",source:"Page 03",page:3,quote:"The available evaluations have not yet shown whether time saved translates into better patient outcomes.",question:"Is there an outcome study that tests this link?"},
-  {id:"o2",type:"omissions",name:"Blind spot",severity:"FOLLOW-UP",title:"Longer-term outcomes remain unclear",body:"The brief notes that few evaluations follow outcomes past year one. That limits what we can say about sustained effects.",source:"Page 03",page:3,quote:"Few published evaluations follow outcomes beyond the first year.",question:"What is known about effects after the first year?"},
-  {id:"e3",type:"evidence",name:"Evidence",severity:"SCOPE",title:"The cited evaluation is small in scope",body:"Three hospital networks offer an early signal. The brief should keep that narrow scope visible when it describes what the tools can do.",source:"Page 03",page:3,quote:"across three hospital networks",question:"How representative were these three networks?"},
-  {id:"f2",type:"framing",name:"Framing",severity:"TONE",title:"“Encouraging” asks the reader to judge before seeing the result",body:"This evaluative phrase leads with a conclusion. Let the measured result speak first, then explain what it means.",source:"Page 03",page:3,quote:"Early results appear encouraging.",question:"Could you state the measured result before interpreting it?"}
-];
-let findings=[...sampleFindings], activeFilter="all", selectedId="e1", explored=new Set(), resolved=new Set(), page=3, liveDoc=null, largeText=false, oldest=false, toastTimer;
-const $=selector=>document.querySelector(selector);
-const sourceLinks=(()=>{try{return JSON.parse(localStorage.getItem("lucent-source-links")||"{}")}catch{return {}}})();
-const escapeHTML=value=>String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
-const toast=message=>{const element=$("#toast");element.textContent=message;element.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>element.classList.remove("show"),2600)};
+let report = null;
+let activeReviewId = null;
+let toastTimer;
+const $ = (query) => document.querySelector(query);
+const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
+const topicLabel = (topic) => ({ size_fit: "Size & fit" })[topic] || topic?.replaceAll("_", " ") || "Other";
+const toast = (message) => { const item = $("#toast"); item.textContent = message; item.classList.add("show"); clearTimeout(toastTimer); toastTimer = setTimeout(() => item.classList.remove("show"), 2800); };
 
-function render(){
-  const visible=findings.filter(item=>activeFilter==="all"||item.type===activeFilter);
-  $("#findingCount").textContent=visible.length;
-  $("#findingsList").innerHTML=(oldest?[...visible].reverse():visible).map(item=>`<article class="finding ${selectedId===item.id?"selected":""} ${resolved.has(item.id)?"resolved":""}" data-id="${escapeHTML(item.id)}"><div class="finding-top"><i class="category-dot ${item.type}"></i><span class="category-name">${escapeHTML(item.name)}</span><span class="severity">${resolved.has(item.id)?"SAVED":escapeHTML(item.severity)}</span></div><h3><button class="finding-title" data-action="open">${escapeHTML(item.title)}</button></h3><p>${escapeHTML(item.body)}</p><div class="finding-source"><span>${escapeHTML(item.source)}</span><button class="passage-button" data-action="open">View passage ↗</button></div><div class="finding-actions"><button data-action="keep">Keep in review</button><button data-action="resolve">Mark explored</button></div></article>`).join("");
-  document.querySelectorAll(".finding").forEach(card=>card.addEventListener("click",event=>{const action=event.target.closest("[data-action]")?.dataset.action;if(!action)return;event.stopPropagation();if(action==="open"){selectFinding(card.dataset.id);return}explored.add(card.dataset.id);if(action==="resolve")resolved.add(card.dataset.id);updateProgress();render();toast(action==="resolve"?"Observation marked as explored":"Observation kept in your review")}));
-  document.querySelectorAll(".lens").forEach(button=>{button.classList.toggle("active",button.dataset.filter===activeFilter);const count=button.querySelector("b");if(count)count.textContent=button.dataset.filter==="all"?findings.length:findings.filter(item=>item.type===button.dataset.filter).length});
-  if(liveDoc)renderDocument();
-  else document.querySelectorAll(".hl").forEach(mark=>mark.classList.toggle("selected",mark.dataset.id===selectedId));
-  const index=findings.findIndex(item=>item.id===selectedId);$("#findingPosition").textContent=index<0?"No finding selected":`Finding ${index+1} of ${findings.length}`;
-  renderTrail();
+function filteredReviews() {
+  if (!report) return [];
+  const query = $("#searchInput").value.trim().toLocaleLowerCase();
+  const product = $("#productFilter").value;
+  const sentiment = $("#sentimentFilter").value;
+  const topic = $("#topicFilter").value;
+  return report.reviews.filter((review) => {
+    const analysis = review.analysis;
+    if (product !== "all" && review.product !== product) return false;
+    if (sentiment === "failed" ? !review.analysis_failed : sentiment !== "all" && analysis?.sentiment !== sentiment) return false;
+    if (topic !== "all" && !analysis?.topics?.includes(topic)) return false;
+    if (query && !`${review.review_id} ${review.product} ${review.review_text} ${analysis?.summary || ""}`.toLocaleLowerCase().includes(query)) return false;
+    return true;
+  });
 }
 
-function renderDocument(){
-  const total=liveDoc.pages.length;page=Math.max(1,Math.min(page,total));const current=liveDoc.pages[page-1];
-  $("#pageNum").textContent=String(current.number).padStart(2,"0");$(".page-control small").textContent=`/ ${String(liveDoc.pages[total-1].number).padStart(2,"0")}`;
-  $("#documentName").textContent=liveDoc.filename;$("#documentMeta").textContent=`${liveDoc.pages.length} extracted ${liveDoc.pages.length===1?"page":"pages"} · ${liveDoc.model}`;
-  $("#paper").innerHTML=`<div class="paper-kicker">${escapeHTML(liveDoc.filename)} <span>·</span> PAGE ${String(current.number).padStart(2,"0")}</div><div class="uploaded-text">${highlightText(current.text,current.number)}</div><div class="paper-footer"><span>PRIVATE DOCUMENT REVIEW</span><span>${String(current.number).padStart(2,"0")}</span></div>`;
-  $("#introDeck").textContent=liveDoc.summary+(liveDoc.truncated?" Some text beyond the review limit was not included.":"");
-  $(".page-control").classList.toggle("single-page",total===1);
-  document.querySelectorAll(".hl").forEach(mark=>mark.classList.toggle("selected",mark.dataset.id===selectedId));
+function renderReport() {
+  if (!report) return;
+  const summary = report.summary;
+  $("#workspace").classList.remove("hidden");
+  $("#welcomeState").classList.add("hidden");
+  $("#downloadCsv").disabled = false;
+  $("#fileLabel").textContent = report.filename;
+  $("#importTitle").textContent = report.filename;
+  $("#importHint").textContent = `${summary.total} unique reviews analyzed · ${report.duplicates} duplicate${report.duplicates === 1 ? "" : "s"} skipped`;
+  $("#runNote").textContent = report.preview ? "Sample preview · illustrative analysis" : `${report.model} · ${report.metrics.processingMs} ms`;
+  $("#totalCount").textContent = summary.total;
+  $("#replyCount").textContent = summary.needsReply;
+  ["positive", "neutral", "negative"].forEach((sentiment) => {
+    const count = summary.counts[sentiment] || 0;
+    const percent = summary.total ? Math.round(count / summary.total * 100) : 0;
+    $(`#${sentiment}Pct`).textContent = `${percent}%`;
+    $(`#${sentiment}Count`).textContent = count;
+    $(`#${sentiment}Bar`).style.width = `${percent}%`;
+  });
+  const quality = $("#qualityStrip");
+  const parts = [];
+  if (report.preview) parts.push("Preview only · not model output");
+  if (report.skipped) parts.push(`${report.skipped} empty row${report.skipped === 1 ? "" : "s"} skipped`);
+  if (report.duplicates) parts.push(`${report.duplicates} duplicate${report.duplicates === 1 ? "" : "s"} detected and analyzed once`);
+  if (summary.ratingAgreement !== null) parts.push(`${summary.ratingAgreement}% rating/sentiment agreement`);
+  if (!report.preview) parts.push(`${report.metrics.aiCalls} AI batch call${report.metrics.aiCalls === 1 ? "" : "s"}`, `${report.metrics.cacheHits} cached result${report.metrics.cacheHits === 1 ? "" : "s"}`);
+  quality.textContent = parts.join(" · "); quality.hidden = false;
+  renderTopics("complaintList", summary.topComplaints, "negative");
+  renderTopics("praiseList", summary.topPraises, "positive");
+  renderProducts(summary.products);
+  const productSelect = $("#productFilter");
+  const selectedProduct = productSelect.value;
+  productSelect.innerHTML = `<option value="all">All products</option>${summary.products.map((name) => `<option value="${esc(name)}">${esc(name)}</option>`).join("")}`;
+  productSelect.value = summary.products.includes(selectedProduct) ? selectedProduct : "all";
+  renderTable();
+  $("#clearFilters").hidden = !hasFilters();
+  $("#reviewDetail").classList.add("hidden");
+  activeReviewId = null;
 }
 
-function highlightText(text,pageNumber){
-  const candidates=findings.filter(item=>item.page===pageNumber&&item.quote).map(item=>({item,start:text.indexOf(item.quote)})).filter(hit=>hit.start>=0).sort((a,b)=>a.start-b.start);
-  const matches=[];let end=0;for(const hit of candidates){if(hit.start<end)continue;matches.push({...hit,end:hit.start+hit.item.quote.length});end=hit.start+hit.item.quote.length}
-  let result="",cursor=0;for(const match of matches){result+=escapeHTML(text.slice(cursor,match.start))+`<mark class="hl ${match.item.type}" data-id="${escapeHTML(match.item.id)}" tabindex="0" role="button" aria-label="Open finding: ${escapeHTML(match.item.title)}">${escapeHTML(text.slice(match.start,match.end))}</mark>`;cursor=match.end}result+=escapeHTML(text.slice(cursor));
-  return result.split(/\n{2,}/).map(paragraph=>`<p>${paragraph.replace(/\n/g,"<br>")}</p>`).join("");
+function renderTopics(id, topics, mood) {
+  const list = $(`#${id}`);
+  if (!topics?.length) { list.innerHTML = `<li class="topic-empty">No ${mood === "negative" ? "complaints" : "praises"} surfaced in this set.</li>`; return; }
+  const max = Math.max(...topics.map((item) => item.count), 1);
+  list.innerHTML = topics.map((item, index) => `<li><span class="topic-rank">${String(index + 1).padStart(2, "0")}</span><span class="topic-name">${esc(topicLabel(item.topic))}</span><span class="topic-track"><i style="width:${Math.round(item.count / max * 100)}%"></i></span><span class="topic-count">${item.count} mention${item.count === 1 ? "" : "s"}</span></li>`).join("");
 }
 
-function renderTrail(){
-  const item=findings.find(candidate=>candidate.id===selectedId);if(!item){$("#evidenceTrail").innerHTML="";return}const href=sourceLinks[item.id];
-  $("#evidenceTrail").innerHTML=`<div class="trail-head"><span class="trail-mark">⌁</span><div><small>TRACE THIS FINDING</small><h3>What is said. What is inferred.</h3></div></div><div class="trail-step"><small>IN THE DOCUMENT <span>${escapeHTML(item.source)}</span></small><blockquote>“${escapeHTML(item.quote||item.title)}”</blockquote></div><div class="trail-step reviewer-read"><small>REVIEWER READ</small><p>${escapeHTML(item.body)}</p>${item.question?`<div class="review-question"><b>ASK</b> ${escapeHTML(item.question)}</div>`:""}</div><div class="trail-source"><div><small>ORIGINAL SOURCE</small><p>${href?`Attached by reviewer · <a href="${escapeHTML(href)}" target="_blank" rel="noopener noreferrer">Open source ↗</a>`:"Not attached · the cited material has not been independently checked."}</p></div><button id="attachSource">${href?"Replace source":"Attach source"}</button></div>`;
-  $("#attachSource").onclick=()=>{const value=prompt("Paste the original source URL");if(!value?.trim())return;try{const url=new URL(value.trim());if(!["http:","https:"].includes(url.protocol))throw new Error();sourceLinks[item.id]=url.href;try{localStorage.setItem("lucent-source-links",JSON.stringify(sourceLinks))}catch{}renderTrail();toast("Source attached. It has not been independently checked.")}catch{toast("Enter a valid http or https link")}};
+function renderProducts(products) {
+  $("#productCount").textContent = products.length;
+  $("#productList").innerHTML = products.map((product) => {
+    const rows = report.reviews.filter((review) => review.product === product && review.analysis);
+    const count = rows.length || 1;
+    const positive = rows.filter((review) => review.analysis.sentiment === "positive").length;
+    const neutral = rows.filter((review) => review.analysis.sentiment === "neutral").length;
+    const negative = rows.filter((review) => review.analysis.sentiment === "negative").length;
+    return `<button class="product-row" data-product="${esc(product)}" aria-label="Filter by ${esc(product)}"><span class="product-name">${esc(product)}</span><span class="product-mini"><i style="width:${positive/count*100}%"></i><i class="neutral" style="width:${neutral/count*100}%"></i><i class="negative" style="width:${negative/count*100}%"></i></span><span class="product-total">${rows.length}</span></button>`;
+  }).join("");
+  document.querySelectorAll(".product-row").forEach((button) => button.addEventListener("click", () => { $("#productFilter").value = button.dataset.product; renderTable(); $("#clearFilters").hidden = !hasFilters(); document.querySelector(".reviews-section").scrollIntoView({ behavior: "smooth", block: "start" }); }));
 }
 
-function updateProgress(){
-  if(!liveDoc){$("#coverageLabel").textContent="—";$("#coverageFill").style.width="0%";$("#reviewProgress").textContent="Choose a document to start an AI review";return}
-  const pct=Math.round(explored.size/Math.max(findings.length,1)*100);$("#coverageLabel").textContent=`${pct}%`;$("#coverageFill").style.width=`${pct}%`;$("#reviewProgress").textContent=`${explored.size} of ${findings.length} observations explored`;
+function renderTable() {
+  const rows = filteredReviews();
+  $("#reviewRows").innerHTML = rows.map((review) => {
+    const analysis = review.analysis;
+    const sentiment = analysis?.sentiment || "failed";
+    const tags = analysis?.topics?.map((topic) => `<span class="topic-tag">${esc(topicLabel(topic))}</span>`).join("") || "—";
+    const rating = review.rating ? `<span class="stars" aria-label="${review.rating} out of 5 stars">${"★".repeat(review.rating)}${"☆".repeat(5-review.rating)}</span>` : `<span class="unknown-rating">Unknown</span>`;
+    return `<tr data-id="${esc(review.review_id)}" class="${activeReviewId === review.review_id ? "selected" : ""}"><td class="review-cell"><div class="review-snippet">${esc(review.review_text)}</div><div class="row-id">${esc(review.review_id)}${review.cached ? " · cached" : ""}</div></td><td class="product-cell" title="${esc(review.product)}">${esc(review.product)}</td><td>${rating}</td><td><span class="sentiment-pill ${sentiment}">${analysis ? esc(analysis.sentiment) : "analysis failed"}</span></td><td><div class="topic-tags">${tags}</div></td><td>${analysis?.needs_reply ? `<span class="reply-pill">Reply</span>` : `<span class="no-reply">—</span>`}</td><td><button class="row-open" aria-label="View review">↗</button></td></tr>`;
+  }).join("");
+  $("#emptyTable").hidden = rows.length > 0;
+  $("#resultCount").textContent = `${rows.length} review${rows.length === 1 ? "" : "s"}`;
+  $("#tableCaption").textContent = rows.length ? "Select a review to see its analysis and suggested reply." : "Try changing a filter or search term.";
+  document.querySelectorAll("#reviewRows tr").forEach((row) => row.addEventListener("click", () => openReview(row.dataset.id)));
 }
 
-function selectFinding(id){
-  const item=findings.find(candidate=>candidate.id===id);if(!item)return;selectedId=id;explored.add(id);if(item.page&&liveDoc)page=liveDoc.pages.findIndex(candidate=>candidate.number===item.page)+1;updateProgress();render();document.querySelector(`.hl[data-id="${CSS.escape(id)}"]`)?.scrollIntoView({behavior:"smooth",block:"center"});
+function hasFilters() { return $("#productFilter").value !== "all" || $("#sentimentFilter").value !== "all" || $("#topicFilter").value !== "all" || Boolean($("#searchInput").value.trim()); }
+
+function openReview(id) {
+  const review = report.reviews.find((item) => item.review_id === id);
+  if (!review) return;
+  activeReviewId = id;
+  const analysis = review.analysis;
+  const detail = $("#reviewDetail"); detail.classList.remove("hidden");
+  if (!analysis) {
+    detail.innerHTML = `<div class="detail-main"><p class="eyebrow">ANALYSIS NEEDS A SECOND LOOK</p><h3 class="detail-heading">${esc(review.product)}</h3><p class="detail-meta">${esc(review.review_id)} · ${review.rating ? `${review.rating} star${review.rating===1?"":"s"}` : "Rating unknown"}</p><blockquote class="detail-quote">“${esc(review.review_text)}”</blockquote></div><div class="detail-side"><h4>Could not validate this result</h4><p class="detail-summary">The AI response did not match the required format after one retry. This review is marked failed instead of being guessed.</p></div>`;
+  } else {
+    detail.innerHTML = `<div class="detail-main"><p class="eyebrow">CUSTOMER REVIEW</p><div class="detail-heading"><h3>${esc(review.product)}</h3><span class="sentiment-pill ${esc(analysis.sentiment)}">${esc(analysis.sentiment)}</span></div><p class="detail-meta">${esc(review.review_id)} · ${review.rating ? `${review.rating} star${review.rating===1?"":"s"}` : "Rating unknown"}${review.date ? ` · ${esc(review.date)}` : ""}</p><blockquote class="detail-quote">“${esc(review.review_text)}”</blockquote><p class="detail-summary">${esc(analysis.summary)}</p></div><div class="detail-side"><h4>What the review is about</h4><div class="detail-topics">${analysis.topics.map((topic) => `<span class="topic-tag">${esc(topicLabel(topic))}</span>`).join("")}</div>${analysis.needs_reply ? `<div class="reply-box"><h4>Suggested reply</h4><p>Generate a draft when you’re ready. It won’t be sent automatically.</p><button class="reply-button" id="makeReply">Draft a reply</button><div id="replyResult"></div></div>` : `<div class="reply-box"><p>No response flag for this review.</p></div>`}</div>`;
+    $("#makeReply")?.addEventListener("click", () => generateReply(review, analysis));
+  }
+  renderTable(); detail.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
-async function analyzeFile(file){
-  if(!file)return;const button=$("#chooseDocument");button.disabled=true;button.textContent="Reviewing…";$("#reviewStatus").textContent="Reading the document";$("#reviewProgress").textContent="Extracting text and tracing claims";
-  const body=new FormData();body.append("document",file);
-  try{const response=await fetch("/api/analyze",{method:"POST",body});const data=await response.json();if(!response.ok)throw new Error(data.error||"The review could not be completed.");
-    liveDoc=data;findings=data.findings.map(item=>({...item}));explored=new Set();resolved=new Set();activeFilter="all";selectedId=findings[0]?.id||null;page=1;
-    $("#reviewStatus").textContent="AI review complete";$("#introDeck").textContent=data.summary;$("#reviewProgress").textContent=`${findings.length} observations · ${data.model}`;updateProgress();render();toast(`${findings.length} findings grounded in your document`);
-  }catch(error){const limitReached=/credits|rate limit|quota/i.test(error.message);const outOfCredits=/no credits remaining/i.test(error.message);$("#reviewStatus").textContent=outOfCredits?"API credits needed":limitReached?"AI usage limit reached":"Review not completed";$("#reviewProgress").textContent=outOfCredits?"Add API credits in OpenAI Platform, then retry":limitReached?"Check your AI provider quota, then retry":"Your sample review is still here";toast(error.message)}
-  finally{button.disabled=false;button.textContent="Choose a document";$("#fileInput").value=""}
+async function generateReply(review, analysis) {
+  const button = $("#makeReply"); const result = $("#replyResult"); button.disabled = true; button.textContent = "Writing a draft…"; result.innerHTML = `<span class="reply-loading">Preparing a reply based on this review…</span>`;
+  try {
+    const response = await fetch("/api/reply", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ review_text: review.review_text, product: review.product, analysis }) });
+    const data = await response.json(); if (!response.ok) throw new Error(data.error || "Could not generate a reply.");
+    result.innerHTML = `<p class="reply-text">${esc(data.reply)}</p><button class="reply-button" id="copyReply">Copy reply</button>`;
+    $("#copyReply").addEventListener("click", async () => { await navigator.clipboard.writeText(data.reply); toast("Reply copied"); });
+    button.textContent = "Draft again";
+  } catch (error) { result.innerHTML = `<span class="reply-loading">${esc(error.message)}</span>`; button.textContent = "Try again"; }
+  finally { button.disabled = false; }
 }
 
-document.querySelectorAll(".lens").forEach(button=>button.addEventListener("click",()=>{activeFilter=button.dataset.filter;render()}));
-document.addEventListener("click",event=>{const mark=event.target.closest(".hl");if(mark)selectFinding(mark.dataset.id)});
-document.addEventListener("keydown",event=>{const mark=event.target.closest?.(".hl");if(mark&&(event.key==="Enter"||event.key===" ")){event.preventDefault();selectFinding(mark.dataset.id)}});
-$("#prevFinding").addEventListener("click",()=>{const index=findings.findIndex(item=>item.id===selectedId);if(findings.length)selectFinding(findings[(index+findings.length-1)%findings.length].id)});
-$("#nextFinding").addEventListener("click",()=>{const index=findings.findIndex(item=>item.id===selectedId);if(findings.length)selectFinding(findings[(index+1)%findings.length].id)});
-$("#prevPage").addEventListener("click",()=>{if(liveDoc){page=Math.max(1,page-1);render()}else toast("Upload a document to navigate pages")});
-$("#nextPage").addEventListener("click",()=>{if(liveDoc){page=Math.min(liveDoc.pages.length,page+1);render()}else toast("Upload a document to navigate pages")});
-$("#textSize").addEventListener("click",()=>{largeText=!largeText;$("#paper").style.fontSize=largeText?"1.08em":"1em";toast(largeText?"Reading size increased":"Reading size reset")});
-$("#filterBtn").addEventListener("click",()=>{const choices=["all","evidence","omissions","framing"],index=choices.indexOf(activeFilter);activeFilter=choices[(index+1)%choices.length];render();toast(`Showing ${activeFilter==="all"?"all observations":activeFilter}`)});
-$("#sortBtn").addEventListener("click",()=>{oldest=!oldest;$("#sortBtn").textContent=oldest?"Oldest first⌄":"Newest first⌄";render()});
-$("#addNote").addEventListener("click",()=>{const note=prompt("What would you like to remember about this document?");if(!note?.trim())return;const id=`note-${Date.now()}`;findings.push({id,type:"note",name:"Your note",severity:"PERSONAL NOTE",title:note.trim(),body:"A note you added to this review.",source:`Page ${String(liveDoc?.pages[page-1]?.number||page).padStart(2,"0")}`,page:liveDoc?.pages[page-1]?.number||page,quote:note.trim(),question:""});selectedId=id;explored.add(id);updateProgress();render();toast("Note added to your review")});
-$("#lensHelp").addEventListener("click",()=>toast("Evidence checks support. Blind spots look for missing context. Framing checks how the claim is presented."));
-$("#finishBtn").addEventListener("click",()=>toast(!liveDoc?"Open a document to begin your review":explored.size===findings.length?"Review complete. Your notes are ready.":`${findings.length-explored.size} observations left to explore`));
-$("#shareBtn").addEventListener("click",async()=>{try{await navigator.clipboard.writeText(location.href);toast("Review link copied")}catch{toast("This review is private to your workspace")}});
-$("#chooseDocument").addEventListener("click",()=>$("#fileInput").click());$("#fileInput").addEventListener("change",event=>analyzeFile(event.target.files[0]));
-$("#paper").addEventListener("dragover",event=>{event.preventDefault();$("#paper").classList.add("drag-over")});$("#paper").addEventListener("dragleave",()=>$("#paper").classList.remove("drag-over"));$("#paper").addEventListener("drop",event=>{event.preventDefault();$("#paper").classList.remove("drag-over");analyzeFile(event.dataTransfer.files[0])});
-fetch("/api/status").then(response=>response.json()).then(status=>{$("#uploadDisclosure").textContent=status.notice||"Lucent does not store uploads.";if(status.issue){const outOfCredits=/no credits remaining/i.test(status.issue);$("#reviewStatus").textContent=outOfCredits?"API credits needed":"AI usage limit reached";$("#reviewProgress").textContent=outOfCredits?"Add API credits, then retry":"Check your AI provider quota, then retry"}else if(status.ready){$("#reviewStatus").textContent=status.provider==="ollama"?"Local AI ready":"AI review ready";$("#reviewProgress").textContent=status.setup}else{$("#reviewStatus").textContent=status.provider==="ollama"?"Local model unavailable":"AI key needed";$("#reviewProgress").textContent=status.setup}}).catch(()=>{$("#reviewStatus").textContent="Start Lucent server";$("#reviewProgress").textContent="Run npm start to enable document upload and AI review"});
-updateProgress();render();
+async function analyzeFile(file) {
+  if (!file) return;
+  if (!file.name.toLocaleLowerCase().endsWith(".csv")) return toast("Choose a CSV file to continue.");
+  if (file.size > 5 * 1024 * 1024) return toast("CSV files must be smaller than 5 MB.");
+  const button = $("#chooseFile"); button.disabled = true; button.textContent = "Analyzing…";
+  $("#importTitle").textContent = "Reading and cleaning your reviews";
+  $("#importHint").textContent = "Duplicate reviews are removed before analysis. This may take a moment.";
+  $("#footerStatus").textContent = "Preparing analysis…";
+  const body = new FormData(); body.append("reviews", file);
+  try {
+    const response = await fetch("/api/analyze", { method: "POST", body }); const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "The review analysis did not finish.");
+    report = data; renderReport(); toast(`${data.summary.total} unique reviews analyzed`);
+    $("#footerStatus").textContent = `Finished in ${data.metrics.processingMs} ms`;
+  } catch (error) {
+    $("#importTitle").textContent = "We couldn’t analyze that file";
+    $("#importHint").textContent = error.message;
+    $("#footerStatus").textContent = "Review file or AI configuration and try again";
+    toast(error.message);
+  } finally { button.disabled = false; button.textContent = "Upload reviews"; $("#fileInput").value = ""; }
+}
+
+async function loadSample() {
+  try {
+    const status = await fetch("/api/status").then((response) => response.json());
+    if (!status.ready) return loadSamplePreview();
+    const response = await fetch("/reviews.csv"); if (!response.ok) throw new Error("Sample file could not be loaded."); const blob = await response.blob(); const file = new File([blob], "reviews.csv", { type: "text/csv" }); await analyzeFile(file);
+  } catch { loadSamplePreview(); }
+}
+
+function loadSamplePreview() {
+  if (!window.REVIEWLENS_PREVIEW) return toast("Start the ReviewLens server to analyze a CSV.");
+  report = structuredClone(window.REVIEWLENS_PREVIEW);
+  renderReport();
+  $("#footerStatus").textContent = "Sample preview · no AI request was made";
+  toast("Loaded the sample dashboard preview");
+}
+
+function exportReport() {
+  if (!report) return;
+  const header = ["review_id","product","rating","date","review_text","sentiment","topics","summary","needs_reply","analysis_failed"];
+  const quote = (value) => `"${String(value ?? "").replaceAll('"','""')}"`;
+  const records = report.reviews.map((review) => [review.review_id,review.product,review.rating ?? "",review.date,review.review_text,review.analysis?.sentiment || "",review.analysis?.topics.join("|") || "",review.analysis?.summary || "",review.analysis?.needs_reply ?? "",review.analysis_failed]);
+  const csv = [header, ...records].map((record) => record.map(quote).join(",")).join("\r\n");
+  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" })); const anchor = document.createElement("a"); anchor.href = url; anchor.download = "reviewlens-analysis.csv"; anchor.click(); URL.revokeObjectURL(url);
+}
+
+$("#chooseFile").addEventListener("click", () => $("#fileInput").click());
+$("#browseFile").addEventListener("click", () => $("#fileInput").click());
+$("#fileInput").addEventListener("change", (event) => analyzeFile(event.target.files[0]));
+$("#sampleButton").addEventListener("click", loadSample);
+$("#welcomeSample").addEventListener("click", loadSample);
+$("#downloadCsv").addEventListener("click", exportReport);
+["#searchInput", "#productFilter", "#sentimentFilter", "#topicFilter"].forEach((selector) => $(selector).addEventListener("input", () => { renderTable(); $("#clearFilters").hidden = !hasFilters(); }));
+$("#clearFilters").addEventListener("click", () => { $("#searchInput").value = ""; $("#productFilter").value = "all"; $("#sentimentFilter").value = "all"; $("#topicFilter").value = "all"; renderTable(); $("#clearFilters").hidden = true; });
+const importPanel = $("#importPanel");
+for (const eventName of ["dragenter", "dragover"]) importPanel.addEventListener(eventName, (event) => { event.preventDefault(); importPanel.classList.add("dragging"); });
+for (const eventName of ["dragleave", "drop"]) importPanel.addEventListener(eventName, (event) => { event.preventDefault(); importPanel.classList.remove("dragging"); });
+importPanel.addEventListener("drop", (event) => analyzeFile(event.dataTransfer.files[0]));
+fetch("/api/status").then((response) => response.json()).then((status) => {
+  $("#footerStatus").textContent = status.ready ? `Gemini ready · ${status.model}` : "Add GEMINI_API_KEY to enable analysis";
+  if (!status.ready) $("#connectionLabel").textContent = "AI key needed";
+}).catch(() => { $("#footerStatus").textContent = "Start the server to analyze reviews"; });
+

@@ -1,10 +1,11 @@
 {
-  "name": "lucent-ai-review-lens",
+  "name": "reviewlens-ai-review-insights",
   "version": "1.0.0",
-  "private": true,
+  "private": false,
   "type": "module",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node --test"
   },
   "engines": {
     "node": ">=22.13.0 || >=24"
@@ -12,9 +13,7 @@
   "dependencies": {
     "dotenv": "^16.6.1",
     "express": "^5.1.0",
-    "mammoth": "^1.10.0",
-    "multer": "^2.0.2",
-    "openai": "^5.12.2",
-    "pdfjs-dist": "^6.2.108"
+    "multer": "^2.0.2"
   }
 }
+
